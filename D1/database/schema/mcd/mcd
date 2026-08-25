@@ -1,0 +1,56 @@
+┌─────────────────────┐
+│     UTILISATEUR     │
+├─────────────────────┤
+│ nom                 │
+│ email               │
+│ mot_de_passe        │
+│ rôle                │
+└─────────────────────┘
+         │        │
+       (0,N)      │
+         │        └─────────────────┐
+      ┌───────┐             ┌───────────────┐
+      │ CRÉER │             │     Roles     │
+      └───────┘             ├───────────────┤
+         │                  │ role          │
+       (1,1)                └───────────────┘
+         │
+┌─────────────────────┐
+│       RECETTE       │
+├─────────────────────┤
+│ nom                 │
+│ description         │
+└─────────────────────┘
+   │       │        │
+   │       │        │
+   │       │        └──────────────────────┐
+   │       │                               │
+   │    APPARTENIR                      COMPOSER
+   │       │                               │
+   │     (1,1)                           (1,N)
+   │       │                               │
+   │     (0,N)                           (0,N)
+   │       │                               │
+┌───────────────┐                 ┌────────────────┐
+│   CATÉGORIE   │                 │   INGRÉDIENT   │
+├───────────────┤                 ├────────────────┤
+│ nom           │                 │ nom            │
+│ description   │                 │ description    │
+└───────────────┘                 └────────────────┘
+                                     
+COMPOSER :
+- quantité
+- unité
+
+
+UTILISATEUR (0,N) ─── AJOUTER AUX FAVORIS ─── (0,N) RECETTE
+
+
+UTILISATEUR (0,N) ───────── NOTER ─────────── (0,N) RECETTE
+                              │
+                            score
+                            
+
+UTILISATEUR (0,N) ──────── COMMENTER ───────── (0,N) RECETTE
+                              │
+                           contenu
