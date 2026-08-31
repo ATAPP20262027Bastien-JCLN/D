@@ -654,21 +654,148 @@ Votre jeu de données doit également permettre de vérifier les relations entre
 
 Vous devez notamment vérifier :
 
-- qu'une recette possède un auteur existant ;
-- qu'une recette appartient à une catégorie existante ;
-- qu'un commentaire appartient à un utilisateur existant ;
-- qu'un commentaire concerne une recette existante ;
-- qu'une note concerne une recette existante ;
-- qu'un favori relie correctement un utilisateur et une recette ;
-- qu'un ingrédient associé à une recette existe réellement.
+* qu'une recette possède un auteur existant ;
+* qu'une recette appartient à une catégorie existante ;
+* qu'un commentaire appartient à un utilisateur existant ;
+* qu'un commentaire concerne une recette existante ;
+* qu'une note concerne une recette existante ;
+* qu'un favori relie correctement un utilisateur et une recette ;
+* qu'un ingrédient associé à une recette existe réellement.
 
-**Que se passe-t-il si vous essayez d'insérer une donnée qui référence un élément inexistant ?**
+### Vérification des relations
 
-....................................................................................
+<details>
+<summary><strong>Recette → Auteur</strong></summary>
 
-....................................................................................
+```sql
+SELECT
+    r.id,
+    r.name AS recipe_name,
+    u.name AS author
+FROM recipes r
+JOIN users u ON r.user_id = u.id;
+```
 
-....................................................................................
+Les trois recettes possèdent un auteur existant.
+
+</details>
+
+<details>
+<summary><strong>Recette → Catégorie</strong></summary>
+
+```sql
+SELECT
+    r.id,
+    r.name AS recipe_name,
+    c.name AS category
+FROM recipes r
+JOIN categories c ON r.category_id = c.id;
+```
+
+Les trois recettes appartiennent à une catégorie existante.
+
+</details>
+
+<details>
+<summary><strong>Commentaire → Utilisateur</strong></summary>
+
+```sql
+SELECT
+    c.id,
+    c.content,
+    u.name AS user_name
+FROM comments c
+JOIN users u ON c.user_id = u.id;
+```
+
+Les trois commentaires appartiennent à un utilisateur existant.
+
+</details>
+
+<details>
+<summary><strong>Commentaire → Recette</strong></summary>
+
+```sql
+SELECT
+    c.id,
+    c.content,
+    r.name AS recipe_name
+FROM comments c
+JOIN recipes r ON c.recipe_id = r.id;
+```
+
+Les trois commentaires concernent une recette existante.
+
+</details>
+
+<details>
+<summary><strong>Note → Recette</strong></summary>
+
+```sql
+SELECT
+    ra.id,
+    ra.score,
+    r.name AS recipe_name
+FROM ratings ra
+JOIN recipes r ON ra.recipe_id = r.id;
+```
+
+Les trois notes concernent une recette existante.
+
+</details>
+
+<details>
+<summary><strong>Favori → Utilisateur et recette</strong></summary>
+
+```sql
+SELECT
+    f.id,
+    u.name AS user_name,
+    r.name AS recipe_name
+FROM favorites f
+JOIN users u ON f.user_id = u.id
+JOIN recipes r ON f.recipe_id = r.id;
+```
+
+Les favoris relient correctement un utilisateur et une recette existants.
+
+</details>
+
+<details>
+<summary><strong>Ingrédient associé → Ingrédient</strong></summary>
+
+```sql
+SELECT
+    ri.id,
+    r.name AS recipe_name,
+    i.name AS ingredient_name,
+    ri.quantity,
+    ri.unit
+FROM recipe_ingredients ri
+JOIN recipes r ON ri.recipe_id = r.id
+JOIN ingredients i ON ri.ingredient_id = i.id;
+```
+
+Tous les ingrédients associés aux recettes existent réellement.
+
+</details>
+
+### Que se passe-t-il si vous essayez d'insérer une donnée qui référence un élément inexistant ?
+
+Les relations entre les tables sont protégées par des **clés étrangères (`FOREIGN KEY`)**.
+
+Si on essaie, par exemple, d'insérer une recette avec un `user_id` qui n'existe pas dans la table `users`, MariaDB refuse l'insertion et renvoie une erreur de contrainte de clé étrangère.
+
+Par exemple :
+
+```sql
+INSERT INTO recipes (name, description, user_id, category_id)
+VALUES ('Test Recipe', 'Test', 999, 1);
+```
+
+Comme l'utilisateur `999` n'existe pas, l'insertion est refusée.
+
+Cela permet d'éviter d'avoir des données incohérentes ou des références vers des éléments inexistants.
 
 ## 12. Gestion de la suppression et intégrité référentielle
 
@@ -678,17 +805,17 @@ Lorsqu'une table est liée à une autre par une **clé étrangère**, vous devez
 
 Pour chaque relation importante de votre base, déterminez le comportement qui vous semble le plus adapté.
 
-| Relation                   | CASCADE | RESTRICT | SET NULL | Choix retenu | Justification |
-| -------------------------- | ------- | -------- | -------- | ------------ | ------------- |
-| Utilisateur → Recettes     | ☐       | ☐        | ☐        |              |               |
-| Utilisateur → Commentaires | ☐       | ☐        | ☐        |              |               |
-| Utilisateur → Favoris      | ☐       | ☐        | ☐        |              |               |
-| Utilisateur → Notes        | ☐       | ☐        | ☐        |              |               |
-| Recette → Commentaires     | ☐       | ☐        | ☐        |              |               |
-| Recette → Notes            | ☐       | ☐        | ☐        |              |               |
-| Recette → Favoris          | ☐       | ☐        | ☐        |              |               |
-| Catégorie → Recettes       | ☐       | ☐        | ☐        |              |               |
-| Autre relation             | ☐       | ☐        | ☐        |              |               |
+| Relation                   | CASCADE | RESTRICT | SET NULL | Choix retenu | Justification                                                                         |
+| -------------------------- | :-----: | :------: | :------: | ------------ | ------------------------------------------------------------------------------------- |
+| Utilisateur → Recettes     |    ☐    |     ☐    |     ☑    | **SET NULL** | Les recettes peuvent être conservées même si leur auteur supprime son compte.         |
+| Utilisateur → Commentaires |    ☑    |     ☐    |     ☐    | **CASCADE**  | Les commentaires d'un utilisateur sont supprimés avec son compte.                     |
+| Utilisateur → Favoris      |    ☑    |     ☐    |     ☐    | **CASCADE**  | Les favoris d'un utilisateur n'ont plus d'utilité après la suppression de son compte. |
+| Utilisateur → Notes        |    ☑    |     ☐    |     ☐    | **CASCADE**  | Les notes associées au compte sont supprimées avec celui-ci.                          |
+| Recette → Commentaires     |    ☑    |     ☐    |     ☐    | **CASCADE**  | Les commentaires concernent une recette précise et sont supprimés avec celle-ci.      |
+| Recette → Notes            |    ☑    |     ☐    |     ☐    | **CASCADE**  | Les notes concernent une recette précise et sont supprimées avec celle-ci.            |
+| Recette → Favoris          |    ☑    |     ☐    |     ☐    | **CASCADE**  | Les favoris associés à une recette supprimée doivent également être supprimés.        |
+| Catégorie → Recettes       |    ☐    |     ☐    |     ☑    | **SET NULL** | Une recette peut être conservée même si sa catégorie est supprimée.                   |
+| Autre relation             |    ☐    |     ☑    |     ☐    | **RESTRICT** | Le rôle d'un utilisateur doit exister tant que des utilisateurs l'utilisent.          |
 
 ### Situation 1 – Suppression d'un utilisateur
 
@@ -696,34 +823,32 @@ Un utilisateur supprime son compte.
 
 Il possède :
 
-- 12 recettes ;
-- 34 commentaires ;
-- 8 notes ;
-- 25 favoris.
+* 12 recettes ;
+* 34 commentaires ;
+* 8 notes ;
+* 25 favoris.
 
 **Que doit-il arriver aux recettes ?**
 
-....................................................................................
+Les 12 recettes doivent être conservées, mais leur `user_id` doit être mis à `NULL`.
 
 **Que doit-il arriver aux commentaires ?**
 
-....................................................................................
+Les 34 commentaires doivent être supprimés.
 
 **Que doit-il arriver aux notes ?**
 
-....................................................................................
+Les 8 notes doivent être supprimées.
 
 **Que doit-il arriver aux favoris ?**
 
-....................................................................................
+Les 25 favoris doivent être supprimés.
 
 **Justifiez vos choix :**
 
-....................................................................................
+Les recettes sont conservées afin de ne pas supprimer du contenu qui peut rester utile aux autres utilisateurs. Leur auteur est simplement retiré grâce à `ON DELETE SET NULL`.
 
-....................................................................................
-
-....................................................................................
+Les commentaires, notes et favoris sont directement liés au compte de l'utilisateur. Ils sont donc supprimés avec celui-ci grâce à `ON DELETE CASCADE`.
 
 ### Situation 2 – Suppression d'une catégorie
 
@@ -731,18 +856,16 @@ Un administrateur souhaite supprimer une catégorie contenant encore **48 recett
 
 Que choisissez-vous ?
 
-- ☐ `CASCADE`
-- ☐ `RESTRICT`
-- ☐ `SET NULL`
-- ☐ Une autre solution
+* ☐ `CASCADE`
+* ☐ `RESTRICT`
+* ☑ `SET NULL`
+* ☐ Une autre solution
 
 **Pourquoi ?**
 
-....................................................................................
+Les 48 recettes ne doivent pas être supprimées simplement parce que leur catégorie est supprimée.
 
-....................................................................................
-
-....................................................................................
+Avec `SET NULL`, les recettes sont conservées et leur `category_id` devient `NULL`. Cela permet de supprimer la catégorie sans perdre les recettes associées.
 
 ### Situation 3 – Suppression d'une recette
 
@@ -750,30 +873,24 @@ Une recette est supprimée.
 
 Elle possède :
 
-- 15 commentaires ;
-- 22 notes ;
-- 40 favoris ;
-- plusieurs ingrédients associés.
+* 15 commentaires ;
+* 22 notes ;
+* 40 favoris ;
+* plusieurs ingrédients associés.
 
 **Quelles données doivent également être supprimées ?**
 
-....................................................................................
-
-....................................................................................
+Les 15 commentaires, les 22 notes, les 40 favoris et les associations avec les ingrédients doivent également être supprimés.
 
 **Quelles données doivent éventuellement être conservées ?**
 
-....................................................................................
+Les ingrédients eux-mêmes doivent être conservés, car ils peuvent être utilisés par d'autres recettes. Seule leur association avec la recette supprimée doit disparaître.
 
-....................................................................................
+**Quelles règles `ON DELETE` allez-vous utiliser ?**
 
-**Quelles règles** `ON DELETE` **allez-vous utiliser ?**
+Les relations entre une recette et ses commentaires, notes et favoris utilisent `ON DELETE CASCADE`.
 
-....................................................................................
-
-....................................................................................
-
-### 
+La relation avec `recipe_ingredients` utilise également `ON DELETE CASCADE`. Les ingrédients eux-mêmes ne sont donc pas supprimés.
 
 ### Règle métier et règle technique
 
@@ -793,72 +910,63 @@ Avant de créer une clé étrangère, posez-vous toujours la question :
 
 > **« Si cette donnée disparaît, que doit-il arriver aux données qui dépendent d'elle ? »**
 
-## 
-
 ## 13. Optimisations du schéma
 
 Une base de données fonctionnelle n'est pas nécessairement une base de données bien conçue.
 
 Analysez votre schéma et indiquez les optimisations présentes.
 
-| Optimisation                                          | Présente ? | Où ? | Pourquoi ? |
-| ----------------------------------------------------- | ---------- | ---- | ---------- |
-| Index sur les clés étrangères                         | ☐          |      |            |
-| Index sur les colonnes souvent recherchées            | ☐          |      |            |
-| Contraintes `UNIQUE`                                  | ☐          |      |            |
-| Types de données adaptés                              | ☐          |      |            |
-| Longueurs `VARCHAR` raisonnables                      | ☐          |      |            |
-| Relations plusieurs-à-plusieurs correctement séparées | ☐          |      |            |
-| Suppression des données dupliquées                    | ☐          |      |            |
-| Contraintes d'intégrité référentielle                 | ☐          |      |            |
-| Règles `ON DELETE` adaptées                           | ☐          |      |            |
-| Règles `ON UPDATE` adaptées                           | ☐          |      |            |
-| Autre optimisation                                    | ☐          |      |            |
+| Optimisation                                          | Présente ? | Où ?                                                                                                                                                                                                                                                        | Pourquoi ?                                                                                                                                                   |
+| ----------------------------------------------------- | :--------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Index sur les clés étrangères                         |      ☑     | `users.id_role`, `recipes.user_id`, `recipes.category_id`, `recipe_ingredients.recipe_id`, `recipe_ingredients.ingredient_id`, `favorites.user_id`, `favorites.recipe_id`, `ratings.user_id`, `ratings.recipe_id`, `comments.user_id`, `comments.recipe_id` | Les clés étrangères permettent de maintenir les relations entre les tables et MariaDB peut utiliser les index associés pour les recherches et les jointures. |
+| Index sur les colonnes souvent recherchées            |      ☐     | —                                                                                                                                                                                                                                                           | Aucun index spécifique n'a été créé sur les colonnes utilisées pour la recherche, comme `recipes.name`.                                                      |
+| Contraintes `UNIQUE`                                  |      ☑     | `users.email`, `categories.name`, `ingredients.name` et les relations plusieurs-à-plusieurs                                                                                                                                                                 | Elles empêchent les doublons et garantissent l'unicité des données concernées.                                                                               |
+| Types de données adaptés                              |      ☑     | Ensemble du schéma                                                                                                                                                                                                                                          | Les types sont adaptés aux données stockées : `INT` pour les identifiants, `DECIMAL` pour les quantités, `TEXT` pour les descriptions et commentaires, etc.  |
+| Longueurs `VARCHAR` raisonnables                      |      ☑     | `roles.name`, `users.name`, `users.email`, `categories.name`, `ingredients.name`, etc.                                                                                                                                                                      | Les longueurs définies sont suffisantes pour les informations stockées sans utiliser des types inutilement volumineux.                                       |
+| Relations plusieurs-à-plusieurs correctement séparées |      ☑     | `recipe_ingredients`, `favorites`, `ratings`                                                                                                                                                                                                                | Les tables intermédiaires permettent de gérer correctement les relations entre plusieurs utilisateurs, recettes et ingrédients.                              |
+| Suppression des données dupliquées                    |      ☑     | Structure générale et contraintes `UNIQUE`                                                                                                                                                                                                                  | Les informations sont séparées dans différentes tables afin d'éviter de stocker plusieurs fois les mêmes données.                                            |
+| Contraintes d'intégrité référentielle                 |      ☑     | Toutes les relations avec `FOREIGN KEY`                                                                                                                                                                                                                     | Elles empêchent les références vers des données inexistantes et maintiennent la cohérence entre les tables.                                                  |
+| Règles `ON DELETE` adaptées                           |      ☑     | Toutes les clés étrangères                                                                                                                                                                                                                                  | `CASCADE`, `SET NULL` et `RESTRICT` sont utilisés selon le comportement attendu lors d'une suppression.                                                      |
+| Règles `ON UPDATE` adaptées                           |      ☑     | Toutes les clés étrangères                                                                                                                                                                                                                                  | Les relations utilisent `ON UPDATE CASCADE`, ce qui permet de mettre à jour automatiquement les références si un identifiant est modifié.                    |
+| Autre optimisation                                    |      ☐     | —                                                                                                                                                                                                                                                           | —                                                                                                                                                            |
 
-Choisissez les **trois optimisations les plus importantes** de votre base de données.
-
-Pour chacune, expliquez :
-
-- ce que vous avez mis en place ;
-- où vous l'avez mis en place ;
-- pourquoi ;
-- ce que cela apporte.
+### Les trois optimisations les plus importantes
 
 ### Optimisation 1
 
 **Optimisation :**
 
-....................................................................................
+Contraintes d'intégrité référentielle avec les clés étrangères.
 
 **Justification :**
 
-....................................................................................
+Les clés étrangères sont utilisées entre les différentes tables, notamment entre `recipes` et `users`, `recipes` et `categories`, ainsi qu'entre les tables intermédiaires et leurs tables principales.
 
-....................................................................................
+Elles empêchent l'insertion de références vers des éléments inexistants et garantissent la cohérence des relations entre les données.
 
 ### Optimisation 2
 
 **Optimisation :**
 
-....................................................................................
+Relations plusieurs-à-plusieurs correctement séparées.
 
 **Justification :**
 
-....................................................................................
+Les relations entre les recettes et les ingrédients sont gérées par `recipe_ingredients`. Les favoris et les notes utilisent également des tables séparées.
 
-....................................................................................
+Cela évite de stocker plusieurs valeurs dans une seule colonne et permet de respecter une structure relationnelle claire et facilement exploitable.
 
 ### Optimisation 3
 
 **Optimisation :**
 
-....................................................................................
+Contraintes `UNIQUE`.
 
 **Justification :**
 
-....................................................................................
+Des contraintes `UNIQUE` sont utilisées notamment sur `users.email`, `categories.name` et `ingredients.name`.
 
-....................................................................................
+Elles empêchent la création de doublons et garantissent que certaines informations importantes restent uniques dans la base de données.
 
 ## 14. Schéma de la base de données
 
@@ -868,9 +976,9 @@ Créez un dossier spécifique pour conserver les schémas de votre base de donn�
 database/
 └── schema/
     ├── mcd/
-    │   └── mcd_recettes.pdf
+    │   └── mcd
     └── mld/
-        └── mld_recettes.pdf
+        └── mld
 ```
 
 Vous pouvez également conserver :
@@ -917,29 +1025,29 @@ Si vous devez recréer manuellement une table ou ajouter manuellement des donné
 ## 17. Vérification finale
 
 | Critère                                                           | Validé |
-| ----------------------------------------------------------------- | ------ |
-| La base peut être recréée uniquement avec les scripts             | ☐      |
-| Toutes les tables du MLD sont présentes                           | ☐      |
-| Les clés primaires sont définies                                  | ☐      |
-| Les clés étrangères sont définies                                 | ☐      |
-| Les contraintes sont cohérentes                                   | ☐      |
-| Toutes les tables contiennent des données réalistes               | ☐      |
-| L'utilisateur SQL de l'application existe                         | ☐      |
-| L'application n'utilise pas `root`                                | ☐      |
-| Les droits SQL sont limités au nécessaire                         | ☐      |
-| Les requêtes nécessaires aux vues sont identifiées                | ☐      |
-| Les requêtes ont été écrites                                      | ☐      |
-| Les requêtes ont été exécutées et testées                         | ☐      |
-| Les informations nécessaires aux vues sont disponibles            | ☐      |
-| Les relations importantes possèdent une règle `ON DELETE` adaptée | ☐      |
-| Les choix `CASCADE`, `RESTRICT` ou `SET NULL` sont justifiés      | ☐      |
-| Les conséquences d'une suppression ont été testées                | ☐      |
-| Les règles `ON UPDATE` ont été réfléchies                         | ☐      |
-| Les optimisations sont identifiées                                | ☐      |
-| Les optimisations sont justifiées                                 | ☐      |
-| Le MCD et le MLD sont conservés dans le projet                    | ☐      |
-| La structure des dossiers est claire                              | ☐      |
-| Le `README.md` explique comment reconstruire la base              | ☐      |
+| ----------------------------------------------------------------- | :----: |
+| La base peut être recréée uniquement avec les scripts             |    ☑   |
+| Toutes les tables du MLD sont présentes                           |    ☑   |
+| Les clés primaires sont définies                                  |    ☑   |
+| Les clés étrangères sont définies                                 |    ☑   |
+| Les contraintes sont cohérentes                                   |    ☑   |
+| Toutes les tables contiennent des données réalistes               |    ☑   |
+| L'utilisateur SQL de l'application existe                         |    ☑   |
+| L'application n'utilise pas `root`                                |    ☑   |
+| Les droits SQL sont limités au nécessaire                         |    ☑   |
+| Les requêtes nécessaires aux vues sont identifiées                |    ☑   |
+| Les requêtes ont été écrites                                      |    ☑   |
+| Les requêtes ont été exécutées et testées                         |    ☑   |
+| Les informations nécessaires aux vues sont disponibles            |    ☑   |
+| Les relations importantes possèdent une règle `ON DELETE` adaptée |    ☑   |
+| Les choix `CASCADE`, `RESTRICT` ou `SET NULL` sont justifiés      |    ☑   |
+| Les conséquences d'une suppression ont été testées                |    ☑   |
+| Les règles `ON UPDATE` ont été réfléchies                         |    ☑   |
+| Les optimisations sont identifiées                                |    ☑   |
+| Les optimisations sont justifiées                                 |    ☑   |
+| Le MCD et le MLD sont conservés dans le projet                    |    ☑   |
+| La structure des dossiers est claire                              |    ☑   |
+| Le `README.md` explique comment reconstruire la base              |    ☑   |
 
 ## Livrables attendus
 
@@ -965,15 +1073,15 @@ Si vous devez recréer manuellement une table ou ajouter manuellement des donné
 
 - Fichier `database/README.md` expliquant comment reconstruire la base.
 
-## 18. Défi  
+## 18. Défi
 
 Imaginez maintenant que votre application ne contient plus quelques dizaines de recettes mais :
 
-- **50 000 utilisateurs** ;
-- **100 000 recettes** ;
-- **500 000 commentaires** ;
-- **1 000 000 de notes** ;
-- plusieurs millions de favoris et de relations entre recettes et ingrédients.
+* **50 000 utilisateurs** ;
+* **100 000 recettes** ;
+* **500 000 commentaires** ;
+* **1 000 000 de notes** ;
+* plusieurs millions de favoris et de relations entre recettes et ingrédients.
 
 Votre base fonctionne toujours, mais certaines pages deviennent lentes.
 
@@ -981,46 +1089,48 @@ Analysez votre base et expliquez ce que vous pourriez améliorer.
 
 Vous pouvez notamment réfléchir à :
 
-- l'utilisation des index ;
-- les colonnes utilisées dans les recherches ;
-- les jointures ;
-- les tris ;
-- les agrégations ;
-- les requêtes exécutées fréquemment ;
-- la pagination ;
-- la quantité de données retournée par une requête ;
-- la structure de certaines tables.
+* l'utilisation des index ;
+* les colonnes utilisées dans les recherches ;
+* les jointures ;
+* les tris ;
+* les agrégations ;
+* les requêtes exécutées fréquemment ;
+* la pagination ;
+* la quantité de données retournée par une requête ;
+* la structure de certaines tables.
 
 **Votre analyse :**
 
-....................................................................................
+Avec un grand nombre de données, il serait important d'ajouter des index sur les colonnes fréquemment utilisées dans les recherches, les jointures et les tris. Par exemple, un index pourrait être ajouté sur `recipes.name` pour améliorer la recherche des recettes.
 
-....................................................................................
+Les requêtes devraient également retourner uniquement les colonnes nécessaires afin de réduire la quantité de données transférées. Les pages contenant beaucoup de recettes devraient utiliser une pagination plutôt que de charger toutes les recettes en une seule fois.
 
-....................................................................................
+Les requêtes utilisant des agrégations, comme le calcul de la note moyenne avec `AVG()`, pourraient devenir plus coûteuses avec un million de notes. Il faudrait donc vérifier ces requêtes et leurs index avec `EXPLAIN` afin d'identifier les opérations lentes.
 
-....................................................................................
+Les jointures entre les tables comme `recipes`, `users`, `comments`, `ratings` et `favorites` devraient également être optimisées avec des index adaptés sur les colonnes utilisées pour les relations.
 
-....................................................................................
+Enfin, les requêtes exécutées très fréquemment pourraient être optimisées ou utiliser un système de cache afin d'éviter de recalculer constamment les mêmes informations.
+
+---
 
 ## 19. Auto-évaluation
 
 À la fin de cette compétence, indiquez le niveau que vous pensez avoir atteint.
 
 | Compétence                                     | Débutant | Intermédiaire | Avancé |
-| ---------------------------------------------- | -------- | ------------- | ------ |
-| Créer une base de données                      | ☐        | ☐             | ☐      |
-| Créer les tables et les relations              | ☐        | ☐             | ☐      |
-| Créer et utiliser des scripts SQL              | ☐        | ☐             | ☐      |
-| Insérer des données réalistes                  | ☐        | ☐             | ☐      |
-| Écrire des requêtes SQL                        | ☐        | ☐             | ☐      |
-| Utiliser des jointures                         | ☐        | ☐             | ☐      |
-| Déterminer les requêtes nécessaires à une vue  | ☐        | ☐             | ☐      |
-| Tester et vérifier les données                 | ☐        | ☐             | ☐      |
-| Créer un utilisateur SQL adapté                | ☐        | ☐             | ☐      |
-| Choisir une stratégie `ON DELETE` adaptée      | ☐        | ☐             | ☐      |
-| Comprendre `CASCADE`, `RESTRICT` et `SET NULL` | ☐        | ☐             | ☐      |
-| Justifier les règles d'intégrité référentielle | ☐        | ☐             | ☐      |
-| Identifier des optimisations                   | ☐        | ☐             | ☐      |
-| Justifier mes choix techniques                 | ☐        | ☐             | ☐      |
-| Maintenir une structure de projet claire       | ☐        | ☐             | ☐      |
+| ---------------------------------------------- | :------: | :-----------: | :----: |
+| Créer une base de données                      |     ☐    |       ☐       |    ☑   |
+| Créer les tables et les relations              |     ☐    |       ☐       |    ☑   |
+| Créer et utiliser des scripts SQL              |     ☐    |       ☐       |    ☑   |
+| Insérer des données réalistes                  |     ☐    |       ☑       |    ☐   |
+| Écrire des requêtes SQL                        |     ☐    |       ☑       |    ☐   |
+| Utiliser des jointures                         |     ☐    |       ☑       |    ☐   |
+| Déterminer les requêtes nécessaires à une vue  |     ☐    |       ☑       |    ☐   |
+| Tester et vérifier les données                 |     ☐    |       ☑       |    ☐   |
+| Créer un utilisateur SQL adapté                |     ☐    |       ☑       |    ☐   |
+| Choisir une stratégie `ON DELETE` adaptée      |     ☐    |       ☑       |    ☐   |
+| Comprendre `CASCADE`, `RESTRICT` et `SET NULL` |     ☐    |       ☑       |    ☐   |
+| Justifier les règles d'intégrité référentielle |     ☐    |       ☑       |    ☐   |
+| Identifier des optimisations                   |     ☐    |       ☑       |    ☐   |
+| Justifier mes choix techniques                 |     ☐    |       ☑       |    ☐   |
+| Maintenir une structure de projet claire       |     ☐    |       ☐       |    ☑   |
