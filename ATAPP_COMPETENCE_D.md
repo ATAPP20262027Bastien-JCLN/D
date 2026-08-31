@@ -242,10 +242,12 @@ Pour chaque requête :
 4. observez le résultat ;
 5. vérifiez que les informations correspondent aux besoins de la vue.
 
-<details>
-    <summary>10.1 Accueil</sumary>
+---
 
-**Requête testée**
+### 10.1 Accueil
+
+<details>
+<summary><strong>Requête testée</strong></summary>
 
 ```sql
 SELECT
@@ -259,27 +261,31 @@ ORDER BY r.id DESC
 LIMIT 6;
 ```
 
-**Résultat attendu**
+</details>
+
+<details>
+<summary><strong>Résultat attendu</strong></summary>
 
 Les recettes sont affichées avec leur catégorie.
 
 Avec les données de test :
 
-|   id | name                | category_name |
-| ---: | ------------------- | ------------- |
-|    3 | Vegetable Stir Fry  | Asian         |
-|    2 | Chicken Curry       | Indian        |
-|    1 | Spaghetti Bolognese | Italian       |
-
-**Résultat correct :** ☑
+| id | name                | category_name |
+| -: | ------------------- | ------------- |
+|  3 | Vegetable Stir Fry  | Asian         |
+|  2 | Chicken Curry       | Indian        |
+|  1 | Spaghetti Bolognese | Italian       |
 
 </details>
+
+**Résultat correct :** ☑
 
 ---
 
 ### 10.2 Liste des recettes
 
-#### Requête testée
+<details>
+<summary><strong>Requête testée</strong></summary>
 
 ```sql
 SELECT
@@ -298,15 +304,20 @@ GROUP BY
     c.name;
 ```
 
-#### Résultat attendu
+</details>
+
+<details>
+<summary><strong>Résultat attendu</strong></summary>
 
 Les trois recettes doivent être affichées avec leur catégorie et leur note moyenne.
 
-|   id | name                | category_name | average_rating |
-| ---: | ------------------- | ------------- | -------------: |
-|    1 | Spaghetti Bolognese | Italian       |           5.00 |
-|    2 | Chicken Curry       | Indian        |           4.00 |
-|    3 | Vegetable Stir Fry  | Asian         |           5.00 |
+| id | name                | category_name | average_rating |
+| -: | ------------------- | ------------- | -------------: |
+|  1 | Spaghetti Bolognese | Italian       |           5.00 |
+|  2 | Chicken Curry       | Indian        |           4.00 |
+|  3 | Vegetable Stir Fry  | Asian         |           5.00 |
+
+</details>
 
 **Résultat correct :** ☑
 
@@ -316,7 +327,10 @@ Les trois recettes doivent être affichées avec leur catégorie et leur note mo
 
 Pour cette vue, plusieurs requêtes sont nécessaires.
 
-### Informations principales
+#### Informations principales
+
+<details>
+<summary><strong>Requête testée</strong></summary>
 
 ```sql
 SELECT
@@ -331,15 +345,23 @@ JOIN categories c ON r.category_id = c.id
 WHERE r.id = 1;
 ```
 
-Résultat attendu :
+</details>
 
-|   id | name                | author | category |
-| ---: | ------------------- | ------ | -------- |
-|    1 | Spaghetti Bolognese | Alice  | Italian  |
+<details>
+<summary><strong>Résultat attendu</strong></summary>
+
+| id | name                | author | category |
+| -: | ------------------- | ------ | -------- |
+|  1 | Spaghetti Bolognese | Alice  | Italian  |
+
+</details>
 
 **Résultat correct :** ☑
 
-### Ingrédients
+#### Ingrédients
+
+<details>
+<summary><strong>Requête testée</strong></summary>
 
 ```sql
 SELECT
@@ -351,7 +373,10 @@ JOIN ingredients i ON ri.ingredient_id = i.id
 WHERE ri.recipe_id = 1;
 ```
 
-Résultat attendu :
+</details>
+
+<details>
+<summary><strong>Résultat attendu</strong></summary>
 
 | name         | quantity | unit  |
 | ------------ | -------: | ----- |
@@ -359,9 +384,14 @@ Résultat attendu :
 | Ground Beef  |   150.00 | grams |
 | Tomato Sauce |   100.00 | ml    |
 
+</details>
+
 **Résultat correct :** ☑
 
-### Note moyenne
+#### Note moyenne
+
+<details>
+<summary><strong>Requête testée</strong></summary>
 
 ```sql
 SELECT
@@ -370,15 +400,23 @@ FROM ratings
 WHERE recipe_id = 1;
 ```
 
-Résultat attendu :
+</details>
+
+<details>
+<summary><strong>Résultat attendu</strong></summary>
 
 ```text
 5.00
 ```
 
+</details>
+
 **Résultat correct :** ☑
 
-### Commentaires
+#### Commentaires
+
+<details>
+<summary><strong>Requête testée</strong></summary>
 
 ```sql
 SELECT
@@ -391,12 +429,17 @@ WHERE c.recipe_id = 1
 ORDER BY c.created_at DESC;
 ```
 
-Résultat attendu :
+</details>
+
+<details>
+<summary><strong>Résultat attendu</strong></summary>
 
 ```text
 Alice
 Delicious! My family loved it.
 ```
+
+</details>
 
 **Résultat correct :** ☑
 
@@ -404,9 +447,10 @@ Delicious! My family loved it.
 
 ### 10.4 Recherche
 
-#### Requête testée
-
 Pour tester la recherche de `curry` :
+
+<details>
+<summary><strong>Requête testée</strong></summary>
 
 ```sql
 SELECT
@@ -419,11 +463,16 @@ JOIN categories c ON r.category_id = c.id
 WHERE r.name LIKE '%curry%';
 ```
 
-#### Résultat attendu
+</details>
 
-|   id | name          | category_name |
-| ---: | ------------- | ------------- |
-|    2 | Chicken Curry | Indian        |
+<details>
+<summary><strong>Résultat attendu</strong></summary>
+
+| id | name          | category_name |
+| -: | ------------- | ------------- |
+|  2 | Chicken Curry | Indian        |
+
+</details>
 
 **Résultat correct :** ☑
 
@@ -431,9 +480,10 @@ WHERE r.name LIKE '%curry%';
 
 ### 10.5 Favoris
 
-#### Requête testée
-
 Pour tester les favoris de l'utilisateur `1` :
+
+<details>
+<summary><strong>Requête testée</strong></summary>
 
 ```sql
 SELECT
@@ -445,14 +495,19 @@ JOIN favorites f ON r.id = f.recipe_id
 WHERE f.user_id = 1;
 ```
 
-#### Résultat attendu
+</details>
+
+<details>
+<summary><strong>Résultat attendu</strong></summary>
 
 L'utilisateur Alice possède deux favoris :
 
-|   id | name               |
-| ---: | ------------------ |
-|    2 | Chicken Curry      |
-|    3 | Vegetable Stir Fry |
+| id | name               |
+| -: | ------------------ |
+|  2 | Chicken Curry      |
+|  3 | Vegetable Stir Fry |
+
+</details>
 
 **Résultat correct :** ☑
 
@@ -460,9 +515,10 @@ L'utilisateur Alice possède deux favoris :
 
 ### 10.6 Profil utilisateur
 
-#### Requête testée
-
 Pour tester le profil d'Alice :
+
+<details>
+<summary><strong>Requête testée</strong></summary>
 
 ```sql
 SELECT
@@ -475,11 +531,16 @@ JOIN roles r ON u.id_role = r.id
 WHERE u.id = 1;
 ```
 
-#### Résultat attendu
+</details>
 
-|   id | name  | email                                         | role |
-| ---: | ----- | --------------------------------------------- | ---- |
-|    1 | Alice | [alice@example.com](mailto:alice@example.com) | user |
+<details>
+<summary><strong>Résultat attendu</strong></summary>
+
+| id | name  | email                                                                     | role |
+| -: | ----- | ------------------------------------------------------------------------- | ---- |
+|  1 | Alice | [[alice@example.com](mailto:alice@example.com)](mailto:alice@example.com) | user |
+
+</details>
 
 **Résultat correct :** ☑
 
@@ -489,7 +550,10 @@ WHERE u.id = 1;
 
 Pour l'administration, plusieurs informations doivent être testées.
 
-### Utilisateurs
+#### Utilisateurs
+
+<details>
+<summary><strong>Requête testée</strong></summary>
 
 ```sql
 SELECT
@@ -502,11 +566,21 @@ JOIN roles r ON u.id_role = r.id
 ORDER BY u.id;
 ```
 
-Résultat attendu : **3 utilisateurs**.
+</details>
+
+<details>
+<summary><strong>Résultat attendu</strong></summary>
+
+**3 utilisateurs**.
+
+</details>
 
 **Résultat correct :** ☑
 
-### Recettes
+#### Recettes
+
+<details>
+<summary><strong>Requête testée</strong></summary>
 
 ```sql
 SELECT
@@ -520,11 +594,21 @@ LEFT JOIN categories c ON r.category_id = c.id
 ORDER BY r.id;
 ```
 
-Résultat attendu : **3 recettes**, avec leur auteur et leur catégorie.
+</details>
+
+<details>
+<summary><strong>Résultat attendu</strong></summary>
+
+**3 recettes**, avec leur auteur et leur catégorie.
+
+</details>
 
 **Résultat correct :** ☑
 
-### Commentaires
+#### Commentaires
+
+<details>
+<summary><strong>Requête testée</strong></summary>
 
 ```sql
 SELECT
@@ -539,21 +623,30 @@ JOIN recipes r ON c.recipe_id = r.id
 ORDER BY c.created_at DESC;
 ```
 
-Résultat attendu : **3 commentaires**.
+</details>
+
+<details>
+<summary><strong>Résultat attendu</strong></summary>
+
+**3 commentaires**.
+
+</details>
 
 **Résultat correct :** ☑
 
 ---
 
+## Récapitulatif
+
 | Vue                  | Requête testée | Résultat correct | Commentaire                                                                      |
 | -------------------- | :------------: | :--------------: | -------------------------------------------------------------------------------- |
-| Accueil              |       ☑        |        ☑         | Les recettes et leurs catégories sont correctement affichées.                    |
-| Liste des recettes   |       ☑        |        ☑         | Les 3 recettes et leurs notes moyennes sont retournées.                          |
-| Détail d'une recette |       ☑        |        ☑         | Les informations, ingrédients, commentaires et note sont correctement récupérés. |
-| Recherche            |       ☑        |        ☑         | La recherche retourne la recette correspondant au terme recherché.               |
-| Favoris              |       ☑        |        ☑         | Les favoris de l'utilisateur sont correctement récupérés.                        |
-| Profil utilisateur   |       ☑        |        ☑         | Les informations de l'utilisateur et son rôle sont correctement affichés.        |
-| Administration       |       ☑        |        ☑         | Les utilisateurs, recettes et commentaires sont correctement récupérés.          |
+| Accueil              |        ☑       |         ☑        | Les recettes et leurs catégories sont correctement affichées.                    |
+| Liste des recettes   |        ☑       |         ☑        | Les 3 recettes et leurs notes moyennes sont retournées.                          |
+| Détail d'une recette |        ☑       |         ☑        | Les informations, ingrédients, commentaires et note sont correctement récupérés. |
+| Recherche            |        ☑       |         ☑        | La recherche retourne la recette correspondant au terme recherché.               |
+| Favoris              |        ☑       |         ☑        | Les favoris de l'utilisateur sont correctement récupérés.                        |
+| Profil utilisateur   |        ☑       |         ☑        | Les informations de l'utilisateur et son rôle sont correctement affichés.        |
+| Administration       |        ☑       |         ☑        | Les utilisateurs, recettes et commentaires sont correctement récupérés.          |
 
 ## 11. Cohérence des données
 
