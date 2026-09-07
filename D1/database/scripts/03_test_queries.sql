@@ -16,11 +16,70 @@ SELECT i.name, ri.quantity, ri.unit FROM recipe_ingredients ri JOIN ingredients 
 SELECT u.name AS user_name, c.content, c.created_at FROM comments c JOIN users u ON c.user_id = u.id WHERE c.recipe_id = 1;
 
 -- Afficher la note moyenne d'une recette
-SELECT AVG(rating) AS average_rating FROM ratings WHERE recipe_id = 1;
+SELECT AVG(score) AS average_rating FROM ratings WHERE recipe_id = 1;
 
 -- Afficher les favoris d'un utilisateur
 SELECT r.id, r.name, r.description FROM recipes r JOIN favorites f ON r.id = f.recipe_id WHERE f.user_id = 1;
 
+
+-- Afficher toutes les recettes d'un utilisateur avec leur catégorie, la note moyenne, ses commentaires et ses ingrédients
+SELECT 
+    r.id AS recipe_id,
+    r.name AS recipe_name,
+    r.description AS recipe_description,
+    c.name AS category_name,
+    ROUND(AVG(ra.score), 2) AS average_rating,
+
+    GROUP_CONCAT(
+        DISTINCT CONCAT(
+            i.name, 
+            ' (', 
+            ri.quantity, 
+            ' ', 
+            ri.unit, 
+            ')'
+        ) 
+        SEPARATOR ', '
+    ) AS ingredients,
+
+    GROUP_CONCAT(
+        DISTINCT CONCAT(
+            u.name, 
+            ': ', 
+            co.content
+        ) 
+        SEPARATOR ' | '
+    ) AS comments
+
+FROM recipes r
+
+LEFT JOIN categories c 
+    ON r.category_id = c.id
+
+LEFT JOIN recipe_ingredients ri 
+    ON r.id = ri.recipe_id
+
+LEFT JOIN ingredients i 
+    ON ri.ingredient_id = i.id
+
+LEFT JOIN ratings ra 
+    ON r.id = ra.recipe_id
+
+LEFT JOIN comments co 
+    ON r.id = co.recipe_id
+
+LEFT JOIN users u 
+    ON co.user_id = u.id
+
+WHERE r.user_id = 1
+
+GROUP BY 
+    r.id,
+    r.name,
+    r.description,
+    c.name
+
+ORDER BY r.id;
 
 -- ========================================
 -- 03_test_queries.sql
